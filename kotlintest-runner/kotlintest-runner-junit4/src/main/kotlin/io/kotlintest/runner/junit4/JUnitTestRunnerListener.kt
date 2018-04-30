@@ -4,17 +4,17 @@ import io.kotlintest.Spec
 import io.kotlintest.TestScope
 import io.kotlintest.TestResult
 import io.kotlintest.TestStatus
-import io.kotlintest.runner.jvm.TestRunnerListener
+import io.kotlintest.runner.jvm.TestEngineListener
 import org.junit.runner.notification.Failure
 import org.junit.runner.notification.RunNotifier
 import kotlin.reflect.KClass
 import org.junit.runner.Description as JDescription
 
 class JUnitTestRunnerListener(val testClass: KClass<out Spec>,
-                              val notifier: RunNotifier) : TestRunnerListener {
+                              val notifier: RunNotifier) : TestEngineListener {
 
   private fun desc(testScope: TestScope): JDescription =
-      JDescription.createTestDescription(testClass.java.canonicalName, testScope.description.dropRoot().fullName())
+      JDescription.createTestDescription(testClass.java.canonicalName, testScope.description.tail().fullName())
 
   override fun executionStarted() {}
   override fun executionFinished(t: Throwable?) {}
