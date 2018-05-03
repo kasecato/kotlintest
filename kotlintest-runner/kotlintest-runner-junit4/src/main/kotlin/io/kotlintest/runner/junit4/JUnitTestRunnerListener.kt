@@ -1,10 +1,11 @@
 package io.kotlintest.runner.junit4
 
 import io.kotlintest.Spec
-import io.kotlintest.TestScope
 import io.kotlintest.TestResult
+import io.kotlintest.TestScope
 import io.kotlintest.TestStatus
 import io.kotlintest.runner.jvm.TestEngineListener
+import io.kotlintest.runner.jvm.TestSet
 import org.junit.runner.notification.Failure
 import org.junit.runner.notification.RunNotifier
 import kotlin.reflect.KClass
@@ -16,18 +17,14 @@ class JUnitTestRunnerListener(val testClass: KClass<out Spec>,
   private fun desc(testScope: TestScope): JDescription =
       JDescription.createTestDescription(testClass.java.canonicalName, testScope.description.tail().fullName())
 
-  override fun executionStarted() {}
-  override fun executionFinished(t: Throwable?) {}
+  override fun engineStarted(classes: List<KClass<out Spec>>) {}
+  override fun engineFinished(t: Throwable?) {}
 
-  override fun executionStarted(spec: Spec) {}
-
-  override fun executionFinished(spec: Spec, t: Throwable?) {}
-
-  override fun executionStarted(scope: TestScope) {
+  override fun prepareScope(scope: TestScope) {
     notifier.fireTestStarted(desc(scope))
   }
 
-  override fun executionFinished(scope: TestScope, result: TestResult) {
+  override fun completeScope(scope: TestScope, result: TestResult) {
     val desc = desc(scope)
     when (result.status) {
       TestStatus.Success -> notifier.fireTestFinished(desc)
@@ -37,17 +34,9 @@ class JUnitTestRunnerListener(val testClass: KClass<out Spec>,
     }
   }
 
-
-//
-//  override fun executionStarted(scope: TestScope) {
-//
-//  }
-//
-//  override fun executionFinished(scope: TestScope, result: TestResult) {
-
-//  }
-//
-//  override fun executionStarted() {}
-//
-//  override fun executionFinished(t: Throwable?) {}
+  override fun prepareSpec(spec: Spec) {}
+  override fun completeSpec(spec: Spec, t: Throwable?) {}
+  override fun prepareTestSet(set: TestSet) {}
+  override fun testRun(set: TestSet, k: Int) {}
+  override fun completeTestSet(set: TestSet, result: TestResult) {}
 }
