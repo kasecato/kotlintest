@@ -9,9 +9,9 @@ import org.junit.runner.notification.RunNotifier
 class KotlinTestRunner(val testClass: Class<out Spec>) : Runner() {
 
   override fun run(notifier: RunNotifier) {
-    val listener = JUnitTestRunnerListener(testClass.kotlin, notifier)
-    val runner = TestEngine(listOf(testClass.kotlin), listener)
-    runner.execute()
+  //  val listener = JUnitTestRunnerListener(testClass.kotlin, notifier)
+  //  val runner = TestEngine(listOf(testClass.kotlin), listener)
+ //   runner.execute()
   }
 
   override fun getDescription(): Description =
