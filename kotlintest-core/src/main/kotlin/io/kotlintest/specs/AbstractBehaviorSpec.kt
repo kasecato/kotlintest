@@ -23,8 +23,8 @@ abstract class AbstractBehaviorSpec(body: AbstractBehaviorSpec.() -> Unit = {}) 
 
   @KotlinTestDsl
   inner class WhenContext(val context: TestContext) {
-    fun Then(name: String, test: TestContext.() -> Unit) = then(name, test)
-    fun then(name: String, test: TestContext.() -> Unit) =
+    fun Then(name: String, test: suspend TestContext.() -> Unit) = then(name, test)
+    fun then(name: String, test: suspend TestContext.() -> Unit) =
         context.registerTestCase("Then: $name", this@AbstractBehaviorSpec, test, this@AbstractBehaviorSpec.defaultTestCaseConfig, TestType.Test)
   }
 

@@ -6,6 +6,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder
 import io.kotlintest.TestContext
 import io.kotlintest.TestResult
 import io.kotlintest.TestStatus
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
@@ -37,7 +38,9 @@ class TestSetExecutor(val listener: TestEngineListener, val context: TestContext
         Try {
           for (k in 0 until set.invocations) {
             listener.testRun(set, k)
-            set.testCase.test(context)
+            runBlocking {
+              set.testCase.test(context)
+            }
           }
         }.recover {
           error.compareAndSet(null, it)
@@ -51,7 +54,9 @@ class TestSetExecutor(val listener: TestEngineListener, val context: TestContext
             executor.submit {
               Try {
                 listener.testRun(set, k)
-                set.testCase.test(context)
+                runBlocking {
+                  set.testCase.test(context)
+                }
               }.recover {
                 error.compareAndSet(null, it)
                 // if an error is detected we'll abort any further invocations

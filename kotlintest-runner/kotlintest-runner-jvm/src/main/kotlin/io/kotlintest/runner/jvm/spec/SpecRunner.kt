@@ -8,10 +8,18 @@ import io.kotlintest.TestCaseOrder
 import io.kotlintest.extensions.SpecExtension
 import io.kotlintest.extensions.SpecInterceptContext
 import io.kotlintest.runner.jvm.TestEngineListener
+import kotlin.coroutines.CoroutineContext
 
+/**
+ * Executes all tests in a given [Spec].
+ */
 abstract class SpecRunner(val listener: TestEngineListener) {
 
-  abstract fun execute(spec: Spec)
+  /**
+   * Executes the tests in the given [Spec] using the supplied coroutine
+   * context as the parent context for each top level test.
+   */
+  abstract fun execute(spec: Spec, coroutineContext: CoroutineContext)
 
   /**
    * Returns the top level [TestCase]s to run, in the order they

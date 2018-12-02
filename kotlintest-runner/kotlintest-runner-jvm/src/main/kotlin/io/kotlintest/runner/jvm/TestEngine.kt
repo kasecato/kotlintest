@@ -6,10 +6,11 @@ import io.kotlintest.Description
 import io.kotlintest.Project
 import io.kotlintest.Spec
 import io.kotlintest.TestIsolationMode
-import io.kotlintest.runner.jvm.spec.InstancePerLeafSpecRunner
-import io.kotlintest.runner.jvm.spec.InstancePerNodeSpecRunner
-import io.kotlintest.runner.jvm.spec.SharedInstanceSpecRunner
+import io.kotlintest.runner.jvm.spec.InstancePerLeafTestCaseSpecRunner
+import io.kotlintest.runner.jvm.spec.InstancePerTestCaseSpecRunner
+import io.kotlintest.runner.jvm.spec.SingleInstanceSpecRunner
 import io.kotlintest.runner.jvm.spec.SpecRunner
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -115,7 +116,9 @@ class TestEngine(val classes: List<KClass<out Spec>>,
     listener.prepareSpec(spec.description(), spec::class)
     Try {
       spec.beforeSpecStarted(spec.description(), spec)
-      runner(spec).execute(spec)
+      runBlocking {
+        runner(spec).execute(spec, coroutineContext)
+      }
       spec.afterSpecCompleted(spec.description(), spec)
     }.fold(
         { listener.completeSpec(spec.description(), spec.javaClass.kotlin, it) },
@@ -126,12 +129,12 @@ class TestEngine(val classes: List<KClass<out Spec>>,
 
   private fun runner(spec: Spec): SpecRunner {
     return when (spec.testIsolationMode()) {
-      TestIsolationMode.SingleInstance -> SharedInstanceSpecRunner(listener)
-      TestIsolationMode.InstancePerNode -> InstancePerNodeSpecRunner(listener)
-      TestIsolationMode.InstancePerLeaf -> InstancePerLeafSpecRunner(listener)
+      TestIsolationMode.SingleInstance -> SingleInstanceSpecRunner(listener)
+      TestIsolationMode.InstancePerNode -> InstancePerTestCaseSpecRunner(listener)
+      TestIsolationMode.InstancePerLeaf -> InstancePerLeafTestCaseSpecRunner(listener)
       null -> when {
-        spec.isInstancePerTest() -> InstancePerNodeSpecRunner(listener)
-        else -> SharedInstanceSpecRunner(listener)
+        spec.isInstancePerTest() -> InstancePerTestCaseSpecRunner(listener)
+        else -> SingleInstanceSpecRunner(listener)
       }
     }
   }

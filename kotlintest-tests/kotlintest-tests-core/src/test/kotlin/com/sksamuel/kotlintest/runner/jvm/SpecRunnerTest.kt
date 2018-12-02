@@ -2,7 +2,7 @@ package com.sksamuel.kotlintest.runner.jvm
 
 import com.nhaarman.mockito_kotlin.mock
 import io.kotlintest.TestCaseOrder
-import io.kotlintest.runner.jvm.spec.SharedInstanceSpecRunner
+import io.kotlintest.runner.jvm.spec.SingleInstanceSpecRunner
 import io.kotlintest.runner.jvm.TestEngineListener
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
@@ -13,13 +13,13 @@ class SpecRunnerTest : WordSpec({
   "SpecRunner" should {
     "support sequential order to order tests" {
       val listener = mock<TestEngineListener> {}
-      val runner = SharedInstanceSpecRunner(listener)
+      val runner = SingleInstanceSpecRunner(listener)
       val tests = runner.topLevelTests(SequentialSpec())
       tests.map { it.name } shouldBe listOf("a", "b", "c", "d", "e")
     }
     "support randomized order to order tests" {
       val listener = mock<TestEngineListener> {}
-      val runner = SharedInstanceSpecRunner(listener)
+      val runner = SingleInstanceSpecRunner(listener)
       val tests1 = runner.topLevelTests(RandomSpec())
       val tests2 = runner.topLevelTests(RandomSpec())
       tests1.map { it.name } shouldNotBe tests2.map { it.name }

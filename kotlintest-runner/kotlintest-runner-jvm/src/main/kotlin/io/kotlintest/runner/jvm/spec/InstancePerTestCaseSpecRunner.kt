@@ -6,13 +6,47 @@ import io.kotlintest.Description
 import io.kotlintest.Spec
 import io.kotlintest.TestCase
 import io.kotlintest.TestContext
+import io.kotlintest.TestType
 import io.kotlintest.runner.jvm.TestCaseExecutor
 import io.kotlintest.runner.jvm.TestEngineListener
 import io.kotlintest.runner.jvm.instantiateSpec
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.util.*
+import kotlin.coroutines.CoroutineContext
 
-class InstancePerNodeSpecRunner(listener: TestEngineListener) : SpecRunner(listener) {
+/**
+ * Implementation of [SpecRunner] that executes each [TestCase] in a fresh instance
+ * of the [Spec] class.
+ *
+ * This differs from the [InstancePerLeafTestCaseSpecRunner] in that
+ * every single test, whether of type [TestType.Test] or [TestType.Container], will be
+ * executed separately. Branch tests will ultimately be executed once as a standalone
+ * test, and also as part of the "path" to any nested tests.
+ *
+ * So, given the following structure:
+ *
+ *  outerTest {
+ *    innerTestA {
+ *      // test
+ *    }
+ *    innerTestB {
+ *      // test
+ *    }
+ *  }
+ *
+ * Three spec instances will be created. The execution process will be:
+ *
+ * spec1 = instantiate spec
+ * spec1.outerTest
+ * spec2 = instantiate spec
+ * spec2.outerTest
+ * spec2.innerTestA
+ * spec3 = instantiate spec
+ * spec3.outerTest
+ * spec3.innerTestB
+ */
+class InstancePerTestCaseSpecRunner(listener: TestEngineListener) : SpecRunner(listener) {
 
   private val logger = LoggerFactory.getLogger(this.javaClass)
 
@@ -25,11 +59,11 @@ class InstancePerNodeSpecRunner(listener: TestEngineListener) : SpecRunner(liste
    * a stack. When the test case has completed, we take the next test case from the
    * stack, and begin executing that.
    */
-  override fun execute(spec: Spec) {
+  override fun execute(spec: Spec, coroutineContext: CoroutineContext) {
     topLevelTests(spec).forEach { enqueue(it) }
     while (queue.isNotEmpty()) {
       val element = queue.removeFirst()
-      execute(element)
+      execute(element, coroutineContext)
     }
   }
 
@@ -53,7 +87,7 @@ class InstancePerNodeSpecRunner(listener: TestEngineListener) : SpecRunner(liste
    * Once the target is found it can be executed as normal, and any test lambdas it contains
    * can be registered back with the stack for execution later.
    */
-  private fun execute(testCase: TestCase) {
+  private fun execute(testCase: TestCase, coroutineContext: CoroutineContext) {
     logger.debug("Executing $testCase")
     instantiateSpec(testCase.spec::class).let {
       when (it) {
@@ -61,30 +95,43 @@ class InstancePerNodeSpecRunner(listener: TestEngineListener) : SpecRunner(liste
         is Success -> {
           val spec = it.value
           interceptSpec(spec) {
-            spec.testCases().forEach { locate(testCase.description, it) }
+            spec.testCases().forEach { test -> locate(testCase.description, test, coroutineContext) }
           }
         }
       }
     }
   }
 
-  private fun locate(target: Description, current: TestCase) {
+  /**
+   * Returns a new [TestContext] which uses the given coroutine context and description
+   * and registers new tests by enqueuing them so they are executed in a fresh spec instance.
+   */
+  private fun queuingTestContext(description: Description, coroutineContext: CoroutineContext): TestContext = object : TestContext(coroutineContext) {
+    override fun description(): Description = description
+    override fun registerTestCase(testCase: TestCase) = enqueue(testCase)
+  }
+
+  /**
+   * Returns a new [TestContext] which uses the given coroutine context and description
+   * and registers new tests by executing them inline.
+   */
+  private fun locatingTestContext(description: Description, target: Description, coroutineContext: CoroutineContext): TestContext = object : TestContext(coroutineContext) {
+    override fun description(): Description = description
+    override fun registerTestCase(testCase: TestCase) = locate(target, testCase, coroutineContext)
+  }
+
+  private fun locate(target: Description, current: TestCase, coroutineContext: CoroutineContext) {
     // if equals then we've found the test we want to invoke
     if (target == current.description) {
-      val context = object : TestContext() {
-        override fun description(): Description = target
-        override fun registerTestCase(testCase: TestCase) = enqueue(testCase)
-      }
       if (executed.contains(target))
         throw  IllegalStateException("Attempting to execute duplicate test")
       executed.add(target)
-      TestCaseExecutor(listener, current, context).execute()
+      TestCaseExecutor(listener, current, queuingTestContext(target, coroutineContext)).execute()
       // otherwise if it's an ancestor then we want to search it recursively
     } else if (current.description.isAncestorOf(target)) {
-      current.test.invoke(object : TestContext() {
-        override fun description(): Description = current.description
-        override fun registerTestCase(testCase: TestCase) = locate(target, testCase)
-      })
+      runBlocking {
+        current.test.invoke(locatingTestContext(current.description, target, coroutineContext))
+      }
     }
   }
 }

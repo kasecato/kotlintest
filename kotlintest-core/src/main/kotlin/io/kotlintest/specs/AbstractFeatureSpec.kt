@@ -22,7 +22,7 @@ abstract class AbstractFeatureSpec(body: AbstractFeatureSpec.() -> Unit = {}) : 
         threads: Int? = null,
         tags: Set<Tag>? = null,
         extensions: List<TestCaseExtension>? = null,
-        test: TestContext.() -> Unit) {
+        test: suspend TestContext.() -> Unit) {
       val config = TestCaseConfig(
           enabled ?: defaultTestCaseConfig.enabled,
           invocations ?: defaultTestCaseConfig.invocations,
@@ -43,7 +43,7 @@ abstract class AbstractFeatureSpec(body: AbstractFeatureSpec.() -> Unit = {}) : 
     fun and(name: String, init: FeatureScope.() -> Unit) =
         context.registerTestCase("And: $name", this@AbstractFeatureSpec, { this@AbstractFeatureSpec.FeatureScope(this).init() }, this@AbstractFeatureSpec.defaultTestCaseConfig, TestType.Container)
 
-    fun scenario(name: String, test: TestContext.() -> Unit) =
+    fun scenario(name: String, test: suspend TestContext.() -> Unit) =
         context.registerTestCase("Scenario: $name", this@AbstractFeatureSpec, test, this@AbstractFeatureSpec.defaultTestCaseConfig, TestType.Test)
 
     fun scenario(name: String) = this@AbstractFeatureSpec.ScenarioBuilder("Scenario: $name", context)

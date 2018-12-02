@@ -1,26 +1,25 @@
-package com.sksamuel.kotlintest.matchers
+package com.sksamuel.kotlintest.matchers.collections
 
 import io.kotlintest.matchers.sequences.*
 import io.kotlintest.specs.WordSpec
-import io.kotlintest.fail
 import io.kotlintest.shouldFail
 import io.kotlintest.shouldThrow
 
 class SequenceMatchersTest : WordSpec() {
 	/* PassFail */
-	fun WordScope.pass(name: String, test: FinalTestContext.() -> Unit) {
-	  ("succeed " + name)(test)
+	fun WordScope.pass(name: String, test: suspend FinalTestContext.() -> Unit) {
+	  ("succeed $name")(test)
     }
 	
-	fun WordScope.succeed(name: String, test: FinalTestContext.() -> Unit) = pass(name, test)
+	fun WordScope.succeed(name: String, test: suspend FinalTestContext.() -> Unit) = pass(name, test)
 	
 	fun WordScope.fail(msg: String):Nothing = io.kotlintest.fail(msg)
 	fun WordScope.fail(name: String, test: () -> Any?) {
-	  ("fail " + name) { shouldFail(test) }
+	  ("fail $name") { shouldFail(test) }
     }
 	
     inline fun <reified E : Throwable> WordScope.abort(name: String, crossinline test: () -> Any?) {
-      ("abort " + name) { shouldThrow<E>(test) }
+      ("abort $name") { shouldThrow<E>(test) }
     }
 
     inline fun <reified E : Throwable> WordScope.`throw`(name: String, crossinline test: () -> Any?) = abort<E>(name, test)
@@ -512,7 +511,7 @@ class SequenceMatchersTest : WordSpec() {
 		
 		"contain exactly empty" should {
 			succeed("for empty") {
-				empty.shouldContainExactly(sequenceOf<Int>())
+				empty.shouldContainExactly(sequenceOf())
 			}
 
 			succeed("for empty (variadic)") {
@@ -537,7 +536,7 @@ class SequenceMatchersTest : WordSpec() {
 		}
 
 		"contain exactly non-empty" should {
-			val nonempty = sparse;
+			val nonempty = sparse
 			
 			fail("for empty") {
 				empty.shouldContainExactly(nonempty)
@@ -582,7 +581,7 @@ class SequenceMatchersTest : WordSpec() {
 		
 		"not contain exactly empty" should {
 			fail("for empty") {
-				empty.shouldNotContainExactly(sequenceOf<Int>())
+				empty.shouldNotContainExactly(sequenceOf())
 			}
 
 			succeed("for single") {
@@ -595,7 +594,7 @@ class SequenceMatchersTest : WordSpec() {
 		}
 
 		"not contain exactly non-empty" should {
-			val nonempty = sparse;
+			val nonempty = sparse
 			
 			succeed("for empty") {
 				empty.shouldNotContainExactly(nonempty)

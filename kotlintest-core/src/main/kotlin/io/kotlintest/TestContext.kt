@@ -1,7 +1,9 @@
 package io.kotlintest
 
 import io.kotlintest.specs.KotlinTestDsl
+import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.coroutines.CoroutineContext
 
 /**
  * A [TestContext] is used as the receiver of a closure that is associated with a [TestCase].
@@ -10,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap
  * of a nested scope.
  */
 @KotlinTestDsl
-abstract class TestContext {
+abstract class TestContext(override val coroutineContext: CoroutineContext) : CoroutineScope {
 
   // needs to be thread safe as a context can be shared amongst many executing instances of the same scope
   private val metadata = ConcurrentHashMap<String, Any?>()
@@ -36,7 +38,7 @@ abstract class TestContext {
    * Creates a new [TestCase] as a child of the currently executing test
    * and then notifies the test runner with the new instance.
    */
-  fun registerTestCase(name: String, spec: Spec, test: TestContext.() -> Unit, config: TestCaseConfig, type: TestType) {
+  fun registerTestCase(name: String, spec: Spec, test: suspend TestContext.() -> Unit, config: TestCaseConfig, type: TestType) {
     val tc = TestCase(description().append(name), spec, test, lineNumber(), type, config)
     registerTestCase(tc)
   }

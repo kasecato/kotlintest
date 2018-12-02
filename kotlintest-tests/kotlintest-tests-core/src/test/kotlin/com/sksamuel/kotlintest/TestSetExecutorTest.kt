@@ -11,6 +11,7 @@ import io.kotlintest.runner.jvm.TestSet
 import io.kotlintest.runner.jvm.TestSetExecutor
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
+import kotlinx.coroutines.GlobalScope
 import java.time.Duration
 
 class TestSetExecutorTest : StringSpec() {
@@ -20,7 +21,7 @@ class TestSetExecutorTest : StringSpec() {
 
       var counter = 0
 
-      val context = object : TestContext() {
+      val context = object : TestContext(GlobalScope.coroutineContext) {
         override fun registerTestCase(testCase: TestCase) {}
         override fun description(): Description = Description.root("wibble")
       }
@@ -37,7 +38,7 @@ class TestSetExecutorTest : StringSpec() {
     // https://github.com/kotlintest/kotlintest/issues/413
     "multiple invocations with a failure should complete" {
 
-      val context = object : TestContext() {
+      val context = object : TestContext(GlobalScope.coroutineContext) {
         override fun registerTestCase(testCase: TestCase) {}
         override fun description(): Description = Description.root("wibble")
       }
@@ -50,7 +51,7 @@ class TestSetExecutorTest : StringSpec() {
 
     "multiple invocations with an error should complete" {
 
-      val context = object : TestContext() {
+      val context = object : TestContext(GlobalScope.coroutineContext) {
         override fun registerTestCase(testCase: TestCase) {}
         override fun description(): Description = Description.root("wibble")
       }
@@ -65,7 +66,7 @@ class TestSetExecutorTest : StringSpec() {
     // https://github.com/kotlintest/kotlintest/issues/413
     "multiple invocations and threads with a failure should complete" {
 
-      val context = object : TestContext() {
+      val context = object : TestContext(GlobalScope.coroutineContext) {
         override fun registerTestCase(testCase: TestCase) {}
         override fun description(): Description = Description.root("wibble")
       }
@@ -78,7 +79,7 @@ class TestSetExecutorTest : StringSpec() {
 
     "multiple invocations and threads with an error should complete" {
 
-      val context = object : TestContext() {
+      val context = object : TestContext(GlobalScope.coroutineContext) {
         override fun registerTestCase(testCase: TestCase) {}
         override fun description(): Description = Description.root("wibble")
       }
