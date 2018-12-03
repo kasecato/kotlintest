@@ -76,3 +76,5 @@ fun lineNumber(): Int {
     it.className.startsWith("io.kotlintest")
   }[0].lineNumber
 }
+
+data class Suite(val name: String)
